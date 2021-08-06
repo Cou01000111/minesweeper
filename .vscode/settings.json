@@ -4,6 +4,11 @@
         "*.c": "c",
         "limits.h": "c",
         "stdio.h": "c",
-        "c_logger_value.h": "c"
-    }
+        "c_logger_value.h": "c",
+        "conio.h": "c",
+        "stdbool.h": "c",
+        "curses.h": "c",
+        "termios.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
