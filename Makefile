@@ -1,6 +1,6 @@
 PROGRAM := minesweeper
 CC := gcc
-CFLAG := -Wall -Wextra -Werror
+CFLAG := -Wall -Wextra
 INCLUDE := -I./include
 SUFFIX := .c
 SRCDIR := ./src

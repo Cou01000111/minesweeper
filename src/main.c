@@ -8,9 +8,9 @@
 
 #include "c_logger.h"
 #include "c_logger_value.h"
-#define N_MINE 10
-#define BD_WD 10
-#define BD_HT 5
+#define N_MINE 15
+#define BD_WD 200
+#define BD_HT 20
 #define ESC 0x1b
 #define KEY_UP 0x48
 #define KEY_DOWN 0x50
@@ -20,53 +20,64 @@
 #define IS_LOWER_SIDE(y) (y == BD_HT - 1)
 #define IS_LEFT_SIDE(x) (x == 0)
 #define IS_RIGHT_SIDE(x) (x == BD_WD - 1)
+#define IS_CURSOR (i == (size_t)g_cursor.y && j == (size_t)g_cursor.x)
+#define BOM -1
+#define TO_COOKED_MODE tcsetattr(STDIN_FILENO, 0, &CookedTermIos);
+#define TO_RAW_MODE tcsetattr(STDIN_FILENO, 0, &RawTermIos);
 
-// 端末設定保存用大域変数
 struct termios CookedTermIos;  // cooked モード用
 struct termios RawTermIos;     // raw モード用
-#define BOM -1
-
-//y,x
-int vertical_horizontal_oblique[8][2] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {-1, -1}, {0, -1}};
-int vertical_horizontal[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
 
 typedef struct {
     int x;
     int y;
-} t_cursor;
+} t_pos;
 
-//めくったかどうかがある{(めくった)1,(めくってない)0,(pin)2}
-int g_ground_bd[BD_HT][BD_WD];
-t_cursor g_cursor;
+typedef enum {
+    NOT_DUG,
+    DUG,
+    PIN
+} t_ground;
+
+typedef enum {
+    NONE,
+    DIG_BOM,
+    CLEAR
+} t_game_endings;
+
+//y,x
+const t_pos VER_HORI_OBLIQUE[8] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {-1, -1}, {0, -1}};
+const t_pos VER_HORI[4] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
+//{NOT_DUG,DUG,PIN}
+t_ground g_ground_bd[BD_HT][BD_WD];
+t_pos g_cursor;
 //{0,1,2,3,4,5,6,7,8,bom(-1)}
 int g_under_bd[BD_HT][BD_WD];
-int g_dig_bord[BD_HT][BD_WD];
 
 int push_buf(char *buf, char *str) {
     strncpy(buf, str, strlen(str));
     return strlen(str);
 }
 
-bool render() {
-    tcsetattr(STDIN_FILENO, 0, &CookedTermIos);
+bool render(bool has_all_bom_show) {
+    TO_COOKED_MODE
     system("clear");
-    char buf[2048];
+    char buf[(BD_HT * (BD_WD + 1) * 14) + 2];
     int buf_i = 0;
     for (size_t i = 0; i < BD_HT; i++) {
         for (size_t j = 0; j < BD_WD; j++) {
-            if (i == (size_t)g_cursor.y && j == (size_t)g_cursor.x) {
-                printf("cursor:x:%d,y:%d\n", g_cursor.x, g_cursor.y);
-                buf_i += push_buf(&buf[buf_i], "\x1b[7m");
-            }
-            if (g_ground_bd[i][j] == 0)
-                buf_i += push_buf(&buf[buf_i], "\x1b[33mO");
-            else if (g_ground_bd[i][j] == 2)
-                buf_i += push_buf(&buf[buf_i], "\x1b[35mP");
+            if (g_under_bd[i][j] == BOM && has_all_bom_show)
+                buf_i += push_buf(&buf[buf_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
+            else if (g_ground_bd[i][j] == NOT_DUG)
+                buf_i += push_buf(&buf[buf_i], IS_CURSOR ? "\x1b[33mO" : "\x1b[7m\x1b[33mO");
+            else if (g_ground_bd[i][j] == PIN)
+                buf_i += push_buf(&buf[buf_i], IS_CURSOR ? "\x1b[7m\x1b[35mP" : "\x1b[43m\x1b[35mP");
             else if (g_under_bd[i][j] == BOM)
-                buf_i += push_buf(&buf[buf_i], "\x1b[31mB");
+                buf_i += push_buf(&buf[buf_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
             else if (g_under_bd[i][j] >= 0 && g_under_bd[i][j] <= 8) {
-                sprintf(&buf[buf_i], "%d", g_under_bd[i][j]);
-                buf_i += 1;
+                sprintf(&buf[buf_i], IS_CURSOR ? "\x1b[7m%d" : "\x1b[37m%d", g_under_bd[i][j]);
+                buf_i += IS_CURSOR ? 5 : 6;
             } else {
                 c_logger_error_log("invalid g_ground_bd");
                 return false;
@@ -77,7 +88,6 @@ bool render() {
     }
     strncpy(&buf[buf_i], "\n\0", 2);
     puts(buf);
-    tcsetattr(STDIN_FILENO, 0, &RawTermIos);
     return true;
 }
 
@@ -88,11 +98,6 @@ void init_boards() {
         for (size_t j = 0; j < BD_WD; j++) g_under_bd[i][j] = 0;
     g_cursor.x = 0;
     g_cursor.y = 0;
-}
-
-void init_dig_bord() {
-    for (size_t i = 0; i < BD_HT; i++)
-        for (size_t j = 0; j < BD_WD; j++) g_dig_bord[i][j] = 0;
 }
 
 void add_bom() {
@@ -116,7 +121,7 @@ void add_bom_count() {
             if (g_under_bd[y][x] == BOM)
                 continue;
             for (size_t i = 0; i < 8; i++)
-                g_under_bd[y][x] += check_mine(y + vertical_horizontal_oblique[i][1], x + vertical_horizontal_oblique[i][0]);
+                g_under_bd[y][x] += check_mine(y + VER_HORI_OBLIQUE[i].y, x + VER_HORI_OBLIQUE[i].x);
         }
     }
 }
@@ -129,66 +134,88 @@ bool init_g_values() {
 }
 
 void dig(int y, int x) {
-    if (x < 0 || y < 0 || BD_WD <= x || BD_HT <= y || g_ground_bd[y][x] == 1 || g_under_bd[y][x] == BOM)
+    if (x < 0 || y < 0 || BD_WD <= x || BD_HT <= y || g_ground_bd[y][x] == DUG || g_under_bd[y][x] == BOM)
         return;
     else {
         g_ground_bd[y][x] = 1;
         if ((g_under_bd[y][x] >= 1 && g_under_bd[y][x] <= 8) == false)
             for (size_t i = 0; i < 4; i++)
-                dig(y + vertical_horizontal[i][1], x + vertical_horizontal[i][0]);
+                dig(y + VER_HORI[i].y, x + VER_HORI[i].x);
     }
 }
 
 void pin(int y, int x) {
-    g_ground_bd[y][x] = 2;
+    if (g_ground_bd[y][x] == DUG) return;
+    g_ground_bd[y][x] = (g_ground_bd[y][x] == PIN) ? NOT_DUG : PIN;
+}
+
+bool has_all_bom_found() {
+    //全てのマス-地雷数 個 掘っていた場合true
+    int count = 0;
+    for (size_t y = 0; y < BD_HT; y++)
+        for (size_t x = 0; x < BD_WD; x++)
+            if (g_ground_bd[y][x] == NOT_DUG || g_ground_bd[y][x] == PIN) count++;
+    //printf("あと%d", (BD_HT * BD_WD - N_MINE) - count);
+    return (count == N_MINE);
+}
+
+void main_game(bool *is_game_run, t_game_endings *game_ending) {
+    TO_RAW_MODE;
+    int c[2];
+    if ((c[0] = getchar()) == ESC && (c[1] = getchar()) == '[') {
+        switch ((c[0] = getchar())) {
+            case 'A':
+                g_cursor.y += (g_cursor.y > 0) ? -1 : 0;
+                break;
+            case 'B':
+                g_cursor.y += (g_cursor.y < (BD_HT - 1)) ? 1 : 0;
+                break;
+            case 'C':
+                g_cursor.x += (g_cursor.x < (BD_WD - 1)) ? 1 : 0;
+                break;
+            case 'D':
+                g_cursor.x += (g_cursor.x > 0) ? -1 : 0;
+                break;
+        }
+    } else if (c[0] == ESC)
+        *is_game_run = false;
+    else if (c[0] == 32 || c[0] == 'x') {
+        if (g_under_bd[g_cursor.y][g_cursor.x] == BOM) {
+            *game_ending = DIG_BOM;
+            *is_game_run = false;
+        }
+        dig(g_cursor.y, g_cursor.x);
+    } else if (c[0] == 'r')
+        pin(g_cursor.y, g_cursor.x);
+    render(false);
+    if (has_all_bom_found()) {
+        *is_game_run = false;
+        *game_ending = CLEAR;
+    }
+}
+
+void ending(t_game_endings game_ending) {
+    TO_COOKED_MODE;
+    if (game_ending == CLEAR)
+        puts("< GAME CLEAR!! >");
+    else if (game_ending == DIG_BOM)
+        puts("< GAME OVER !! >");
+    else
+        puts("< ERROR !! >");
 }
 
 int main() {
+    t_game_endings game_ending = NONE;
+    bool is_game_run = true;
     if (N_MINE > BD_HT * BD_WD) return 0;
-    // 初期状態の端末設定 (cooked モード) を取得・保存する．
     tcgetattr(STDIN_FILENO, &CookedTermIos);
-    // raw モードの端末設定を作成・保存する．
     RawTermIos = CookedTermIos;
     cfmakeraw(&RawTermIos);
-    // 端末を raw モードに設定する．
-    tcsetattr(STDIN_FILENO, 0, &RawTermIos);
-    int c[2];
-    bool isnt_game_fin = true;
+    TO_RAW_MODE
     init_g_values();
-    render();
-    while (isnt_game_fin) {
-        if ((c[0] = getchar()) == ESC && (c[1] = getchar()) == '[') {
-            switch ((c[0] = getchar())) {
-                case 'A':
-                    g_cursor.y += (g_cursor.y > 0) ? -1 : 0;
-                    break;
-                case 'B':
-                    g_cursor.y += (g_cursor.y < (BD_HT - 1)) ? 1 : 0;
-                    break;
-                case 'C':
-                    g_cursor.x += (g_cursor.x < (BD_WD - 1)) ? 1 : 0;
-                    break;
-                case 'D':
-                    g_cursor.x += (g_cursor.x > 0) ? -1 : 0;
-                    break;
-            }
-            render();
-        } else if (c[0] == ESC)
-            break;
-        else if (c[0] == 32 || c[0] == 'x')
-            dig(g_cursor.y, g_cursor.x);
-        else if (c[0] == 'z')
-            pin(g_cursor.y, g_cursor.x);
-        else if (c[0] == 'c')
-            pin(g_cursor.y, g_cursor.x);
-    }
-    /*
-    初期画面
-        ボード初期化
-    ゲーム画面
-        操作を入力
-        データを操作
-        データをもとに画面を出力
-    */
-    tcsetattr(STDIN_FILENO, 0, &CookedTermIos);
+    render(false);
+    while (is_game_run)
+        main_game(&is_game_run, &game_ending);
+    render(true);
+    ending(game_ending);
 }

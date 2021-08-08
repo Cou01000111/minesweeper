@@ -8,7 +8,8 @@
         "conio.h": "c",
         "stdbool.h": "c",
         "curses.h": "c",
-        "termios.h": "c"
+        "termios.h": "c",
+        "limits": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
