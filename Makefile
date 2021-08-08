@@ -17,10 +17,8 @@ all: $(TARGET)
 $(TARGET): $(SRCS)
 	$(CC) $(INCLUDE) $(CFLAG) $(SRCS) -L -llogger.a -lncurses -o ./$@
 
-win: $(WIN_TARGET)
-
 $(WIN_TARGET): $(SRCS)
-	$(CC) $(CFLAG) $(SRCDIR)/main_win.c -o ./$@
+	$(CC) $(INCLUDE) $(CFLAG) ./src/main_win.c -o -L -llogger.a ./$@
 
 test: $(SRCS)
 	$(CC) $(INCLUDE) -Wall ./src/test.c $(LIBS) -L -llogger.a -o ./$@

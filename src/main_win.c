@@ -8,7 +8,7 @@
 
 #include "c_logger.h"
 #include "c_logger_value.h"
-#define N_MINE 5
+#define N_MINE 12
 #define BD_WD 20
 #define BD_HT 5
 #define ESC 0x1b
