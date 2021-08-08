@@ -10,11 +10,17 @@ SRCS := $(wildcard $(SRCDIR)/*$(SUFFIX))
 LIBS := $(wildcard $(LIBDIR)/*$(SUFFIX))
 OBJS := $(SRCS:%.c=%.o)
 TARGET := ./$(PROGRAM)
+WIN_TARGET := ./win_$(PROGRAM)
 
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
 	$(CC) $(INCLUDE) $(CFLAG) $(SRCS) $(LIBS) -L -llogger.a -lncurses -o ./$@
+
+win: $(WIN_TARGET)
+
+$(WIN_TARGET): $(SRCS)
+	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main_win.c $(LIBS) -o ./$@
 
 test: $(SRCS)
 	$(CC) $(INCLUDE) -Wall ./src/test.c $(LIBS) -L -llogger.a -o ./$@
