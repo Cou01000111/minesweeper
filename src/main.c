@@ -8,9 +8,9 @@
 
 #include "c_logger.h"
 #include "c_logger_value.h"
-#define N_MINE 15
-#define BD_WD 200
-#define BD_HT 20
+#define N_MINE 100
+#define BD_WD 40
+#define BD_HT 12
 #define ESC 0x1b
 #define KEY_UP 0x48
 #define KEY_DOWN 0x50
