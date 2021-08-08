@@ -15,12 +15,12 @@ WIN_TARGET := ./win_$(PROGRAM)
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main.c -L -llogger -o ./$@
+	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main.c $(LIBS) -L -llogger -o ./$@
 
 win: $(WIN_TARGET)
 
 $(WIN_TARGET): $(SRCS)
-	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main_win.c -L -llogger -o ./$@
+	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main_win.c $(LIBS) -L -llogger -o ./$@
 
 test: $(SRCS)
 	$(CC) $(INCLUDE) -Wall ./src/test.c $(LIBS) -L -llogger -o ./$@
