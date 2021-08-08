@@ -15,16 +15,18 @@ WIN_TARGET := ./win_$(PROGRAM)
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-	$(CC) $(INCLUDE) $(CFLAG) $(SRCS) -L -llogger.a -lncurses -o ./$@
+	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main.c -L -llogger -o ./$@
+
+win: $(WIN_TARGET)
 
 $(WIN_TARGET): $(SRCS)
-	$(CC) $(INCLUDE) $(CFLAG) ./src/main_win.c -o -L -llogger.a ./$@
+	$(CC) $(INCLUDE) $(CFLAG) $(SRCDIR)/main_win.c -L -llogger -o ./$@
 
 test: $(SRCS)
-	$(CC) $(INCLUDE) -Wall ./src/test.c $(LIBS) -L -llogger.a -o ./$@
+	$(CC) $(INCLUDE) -Wall ./src/test.c $(LIBS) -L -llogger -o ./$@
 
 wintest: $(SRCS)
-	$(CC) $(INCLUDE) -Wall -Wno-stringop-truncation ./src/mainwin.c $(LIBS) -L -llogger.a -o ./$@
+	$(CC) $(INCLUDE) -Wall -Wno-stringop-truncation ./src/mainwin.c $(LIBS) -L -llogger -o ./$@
 
 clean:
 	echo a
