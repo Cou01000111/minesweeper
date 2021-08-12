@@ -1,6 +1,5 @@
 # minesweeper
 
 ## 苦労した点
-getch関数がデフォルトで使えないためlibncurses5-devを入れた
-使うのに手こずったがここ参考に何とかなった
-http://debuggingasusual.blogspot.com/2011/12/curses.html
+標準Cライブラリのみで作ったため_getch()や_keyhit()が使えないのが大変だった
+そのため、ターミナルのraw mode や cooked modeについての理解が必要になった
