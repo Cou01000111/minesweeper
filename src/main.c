@@ -8,9 +8,15 @@
 
 #include "c_logger.h"
 #include "c_logger_value.h"
+<<<<<<< HEAD
 #define N_MINE 15
 #define BD_WD 20
 #define BD_HT 5
+=======
+#define N_MINE 100
+#define BD_WD 40
+#define BD_HT 12
+>>>>>>> 288f29ad6e7ca87caeaf28bee2219aae58d3e124
 #define ESC 0x1b
 #define KEY_UP 0x48
 #define KEY_DOWN 0x50

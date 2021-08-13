@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "c_logger.h"
+//#include "c_logger.h"
 #include "c_logger_value.h"
 #define N_MINE 12
 #define BD_WD 20
