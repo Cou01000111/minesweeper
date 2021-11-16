@@ -29,7 +29,6 @@ wintest: $(SRCS)
 	$(CC) $(INCLUDE) -Wall -Wno-stringop-truncation ./src/mainwin.c $(LIBS) -L -llogger -o ./$@
 
 clean:
-	echo a
 
 fclean: clean
 	rm $(TARGET)
