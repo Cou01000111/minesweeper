@@ -74,6 +74,7 @@ void pin(int y, int x);
 bool has_all_bom_found();
 void main_game(bool *is_game_run, t_game_endings *game_ending);
 void ending(t_game_endings game_ending);
+int push_draw_string(char *buf, char *str);
 
 int main() {
     t_game_endings game_ending = NONE;
@@ -158,19 +159,23 @@ bool render(bool has_all_bom_show) {
             // 地中にボムがあり、全てのボムが発掘された場合
             if(g_under_bd[i][j] == BOM && has_all_bom_show)
                 // それぞれカーソルだった場合は反転した色の文字を描画予定の画面(draw_string)に追加
-                draw_string_i += push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
+                draw_string_i +=
+                    push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
             // 地表がまだ掘られていない場合
             else if(g_ground_bd[i][j] == NOT_DUG)
                 // それぞれカーソルだった場合は反転した色の文字を描画予定の画面(draw_string)に追加
-                draw_string_i += push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[33mO" : "\x1b[7m\x1b[33mO");
+                draw_string_i +=
+                    push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[33mO" : "\x1b[7m\x1b[33mO");
             // 地表にピンが刺されている場合
             else if(g_ground_bd[i][j] == PIN)
                 // それぞれカーソルだった場合は反転した色の文字を描画予定の画面(draw_string)に追加
-                draw_string_i += push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[35mP" : "\x1b[43m\x1b[35mP");
+                draw_string_i +=
+                    push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[35mP" : "\x1b[43m\x1b[35mP");
             // 地中にボムがある場合
             else if(g_under_bd[i][j] == BOM)
                 // それぞれカーソルだった場合は反転した色の文字を描画予定の画面(draw_string)に追加
-                draw_string_i += push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
+                draw_string_i +=
+                    push_draw_string(&draw_string[draw_string_i], IS_CURSOR ? "\x1b[7m\x1b[31mB" : "\x1b[31mB");
             // 地中の状態が「ボムが0個個異常8個以下」
             else if(g_under_bd[i][j] >= 0 && g_under_bd[i][j] <= 8) {
                 // それぞれカーソルだった場合は反転した色の文字を描画予定の画面(draw_string)に追加
@@ -266,4 +271,6 @@ void ending(t_game_endings game_ending) {
         puts("< GAME OVERTICAL !! >");
     else
         puts("< ERROR !! >");
+    puts("Enterを押すと終了します");
+    getchar();
 }
